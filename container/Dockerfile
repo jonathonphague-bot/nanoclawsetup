@@ -1,11 +1,20 @@
 # NanoClaw Agent Container
 # Runs Claude Agent SDK in isolated Linux VM with browser automation
 
-FROM node:22-slim
+FROM local/ubuntu:24.04
 
-# Install system dependencies for Chromium
-RUN apt-get update && apt-get install -y \
-    chromium \
+# Set proxy for build-time apt/npm operations
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ENV http_proxy=$HTTP_PROXY
+ENV https_proxy=$HTTPS_PROXY
+
+# Add universe repo and install system dependencies
+# Note: chromium is not available as a deb in Ubuntu 24.04 (snap only).
+# The host's playwright-managed chromium binary is bind-mounted at runtime.
+RUN echo "deb http://archive.ubuntu.com/ubuntu noble main universe restricted" > /etc/apt/sources.list && \
+    echo "deb http://archive.ubuntu.com/ubuntu noble-updates main universe restricted" >> /etc/apt/sources.list && \
+    apt-get update && apt-get install -y \
     fonts-liberation \
     fonts-noto-cjk \
     fonts-noto-color-emoji \
@@ -17,32 +26,45 @@ RUN apt-get update && apt-get install -y \
     libxcomposite1 \
     libxdamage1 \
     libxrandr2 \
-    libasound2 \
+    libasound2t64 \
     libpangocairo-1.0-0 \
     libcups2 \
     libdrm2 \
     libxshmfence1 \
     curl \
     git \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Chromium path for agent-browser
-ENV AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
+# Add node user (matches node:22-slim behavior)
+RUN groupadd --gid 1000 node && \
+    useradd --uid 1000 --gid node --shell /bin/bash --create-home node
 
-# Install agent-browser and claude-code globally
-RUN npm install -g agent-browser @anthropic-ai/claude-code
+# Copy pre-built Node.js 22 from build context
+COPY node22-minimal.tar.gz /tmp/node22-minimal.tar.gz
+RUN mkdir -p /usr/local && tar -xzf /tmp/node22-minimal.tar.gz -C /usr/local && \
+    rm /tmp/node22-minimal.tar.gz && \
+    chmod +x /usr/local/bin/node && \
+    ln -sf /usr/local/bin/node /usr/bin/node && \
+    ln -sf /usr/local/bin/npm /usr/bin/npm && \
+    ln -sf /usr/local/bin/npx /usr/bin/npx && \
+    ln -sf /usr/local/bin/claude /usr/bin/claude && \
+    ln -sf /usr/local/bin/agent-browser /usr/bin/agent-browser && \
+    chmod +x /usr/local/lib/node_modules/agent-browser/bin/agent-browser-linux-x64
+
+# Playwright chromium is bind-mounted from the host at runtime.
+# The host path /root/.cache/ms-playwright/ is mounted to the same path in the container.
+ENV AGENT_BROWSER_EXECUTABLE_PATH=/root/.cache/ms-playwright/chromium-1194/chrome-linux/chrome
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/root/.cache/ms-playwright/chromium-1194/chrome-linux/chrome
+
+# Clear proxy env after installs (don't leak into runtime)
+ENV http_proxy=
+ENV https_proxy=
 
 # Create app directory
 WORKDIR /app
 
-# Copy package files first for better caching
-COPY agent-runner/package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy source code
+# Copy agent-runner with pre-installed node_modules (installed on host to avoid proxy TLS issues)
 COPY agent-runner/ ./
 
 # Build TypeScript

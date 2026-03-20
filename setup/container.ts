@@ -99,11 +99,17 @@ export async function run(args: string[]): Promise<void> {
     runtime === 'apple-container' ? 'container build' : 'docker build';
   const runCmd = runtime === 'apple-container' ? 'container' : 'docker';
 
+  // Pass proxy build args when available (needed for npm/apt in restricted environments)
+  const httpProxy = process.env.GLOBAL_AGENT_HTTP_PROXY || process.env.HTTP_PROXY || process.env.http_proxy || '';
+  const proxyArgs = httpProxy && runtime === 'docker'
+    ? ` --build-arg HTTP_PROXY="${httpProxy}" --build-arg HTTPS_PROXY="${httpProxy}"`
+    : '';
+
   // Build
   let buildOk = false;
   logger.info({ runtime }, 'Building container');
   try {
-    execSync(`${buildCmd} -t ${image} .`, {
+    execSync(`${buildCmd}${proxyArgs} -t ${image} .`, {
       cwd: path.join(projectRoot, 'container'),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
