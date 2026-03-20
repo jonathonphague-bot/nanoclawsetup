@@ -12,6 +12,11 @@ ENV https_proxy=$HTTPS_PROXY
 # Add universe repo and install system dependencies
 # Note: chromium is not available as a deb in Ubuntu 24.04 (snap only).
 # The host's playwright-managed chromium binary is bind-mounted at runtime.
+ARG APT_PROXY
+RUN if [ -n "$APT_PROXY" ]; then \
+      echo "Acquire::http::Proxy \"$APT_PROXY\";" > /etc/apt/apt.conf.d/99proxy && \
+      echo "Acquire::https::Proxy \"$APT_PROXY\";" >> /etc/apt/apt.conf.d/99proxy; \
+    fi
 RUN echo "deb http://archive.ubuntu.com/ubuntu noble main universe restricted" > /etc/apt/sources.list && \
     echo "deb http://archive.ubuntu.com/ubuntu noble-updates main universe restricted" >> /etc/apt/sources.list && \
     apt-get update && apt-get install -y \
