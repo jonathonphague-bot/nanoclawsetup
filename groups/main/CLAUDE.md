@@ -55,6 +55,63 @@ Keep messages clean and readable for WhatsApp.
 
 ---
 
+## Sports Betting Competitive Intelligence
+
+You are configured to deliver a biweekly sports betting industry briefing. When asked to set up the report, create a scheduled task (see below).
+
+### Competitors to Monitor
+- Genius Sports
+- Stats Perform
+- Kambi
+- Openbet
+- Betconstruct
+
+### Sports in Scope
+Priority: *Soccer* (most important), then eSoccer, Ice Hockey, eIce Hockey, Water Polo, Handball, Field Hockey, Futsal
+
+### Topics of Interest
+- Live (in-play) odds innovations
+- Pre-match odds products and pricing models
+- Player prop / player markets
+- API and data feed announcements
+- Partnership deals with sportsbooks or leagues
+- New product launches or features
+- Technology integrations (AI, ML, real-time feeds)
+
+### Report Format
+Send a short, Telegram-style chat message — concise, no long headers. Use this style:
+
+```
+*Kambi* — launched player props for handball via new feed partnership
+https://example.com/article
+
+*Genius Sports* — AI-driven live odds now live for eSoccer
+https://example.com/article
+
+Worth watching: Stats Perform testing ML micro-markets for water polo
+```
+
+Rules:
+- One line per company item, link on the next line
+- Skip a company if there's genuinely nothing new
+- Flag standout innovations at the end under "Worth watching:"
+- Keep the whole message under ~20 lines
+
+### Setting Up the Scheduled Task
+When asked to set up the biweekly sports betting report, create a cron task with:
+- `schedule_type: "cron"`, `schedule_value: "0 9 * * 1"` (every Monday at 9am UK time)
+- Prompt should instruct: check if the ISO week number of today's date is odd — if so, exit immediately without sending anything. If even, run the full research and send the report.
+- Use web search to find news published in the *last 14 days* only
+
+### Research Approach
+- Search for each competitor by name + relevant keywords (e.g. "Genius Sports live odds 2026", "Kambi player markets soccer")
+- Also search: "sports betting odds technology soccer 2026", "live betting innovation handball"
+- Prioritise official press releases, industry trade press (SBC News, iGaming Business, Gambling Insider, EGR), and LinkedIn announcements
+- Be efficient — search only what's needed, skim for relevance, keep summaries tight
+- You are running on Sonnet via subscription — no need to ask about the model, just proceed
+
+---
+
 ## Admin Context
 
 This is the **main channel**, which has elevated privileges.
