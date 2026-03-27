@@ -40,5 +40,4 @@ agents-sdk-docs
 container/node22-minimal.tar.gz
 container/agent-runner/node_modules/
 
-start-nanoclaw.sh
 nanoclaw.pid

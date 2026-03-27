@@ -52,8 +52,12 @@ export class WhatsAppChannel implements Channel {
   }
 
   async connect(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.connectInternal(resolve).catch(reject);
+    // Connect in background so other channels (e.g. Telegram) are not blocked
+    // if WhatsApp auth is missing or slow to establish.
+    this.connectInternal(() => {
+      logger.info('WhatsApp connected');
+    }).catch((err) => {
+      logger.error({ err }, 'WhatsApp connection failed');
     });
   }
 
